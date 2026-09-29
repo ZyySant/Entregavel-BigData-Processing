@@ -10,9 +10,9 @@ customizada com quarentena, e orquestração via Airflow — tudo containerizado
 
 | Nome | RA |
 |---|---|
-| _(preencher)_ | _(preencher)_ |
-| _(preencher)_ | _(preencher)_ |
-| _(preencher)_ | _(preencher)_ |
+| | |
+| | |
+| | |
 
 ## Como rodar
 
