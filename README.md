@@ -16,15 +16,25 @@ customizada com quarentena, e orquestração via Airflow — tudo containerizado
 
 ## Como rodar
 
-Requisitos: Docker Desktop com Docker Compose v2, 8GB RAM livres, 4 cores.
+### Pré-requisitos
+
+- [Docker Desktop](https://docs.docker.com/get-docker/) instalado (Windows/Mac) ou Docker Engine + plugin Compose (Linux) — já vem com Docker Compose v2
+- Git
+- 8GB RAM livres, 4 cores, internet na primeira subida (baixa as imagens do Spark e do Airflow)
+- Portas `7077`, `8080` e `8081` livres na máquina
+
+### Passo a passo
 
 ```bash
+git clone https://github.com/ZyySant/Entregavel-BigData-Processing.git
+cd Entregavel-BigData-Processing
 docker compose up -d --build
 ```
 
-A primeira subida demora um pouco mais (build da imagem do Airflow + pull do
-Spark). Acompanhe com `docker compose ps` até todos os serviços ficarem
-`healthy` ou `running`.
+A primeira subida demora uns 5–10 minutos (builda a imagem do Airflow com
+Java + PySpark, e baixa a imagem oficial do Spark). Acompanhe com
+`docker compose ps` até `spark-master` e `airflow-webserver` aparecerem como
+`healthy`.
 
 - Spark Master UI: http://localhost:8080
 - Airflow UI: http://localhost:8081 (usuário `admin`, senha `admin`)
@@ -95,6 +105,7 @@ descartado.
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
+| `docker compose up` falha com "port is already allocated" | Porta 7077, 8080 ou 8081 já está em uso por outro programa | Feche o que estiver usando a porta, ou pare outros containers com `docker ps` + `docker stop <id>` |
 | `SparkSubmitOperator` falha com "spark-submit: command not found" | Imagem do Airflow não foi rebuildada | `docker compose build airflow-init airflow-webserver airflow-scheduler` |
 | DAG não aparece na UI | Scheduler ainda não fez o parse, ou erro de import | `docker compose logs airflow-scheduler` / `docker exec shopbrasil-airflow-scheduler airflow dags list-import-errors` |
 | `FileNotFoundError` no job Bronze | Data errada ou pasta `incoming/<data>` não existe | Confira `data/raw/incoming/` — só existe de 2023-12-01 a 2023-12-08 |
