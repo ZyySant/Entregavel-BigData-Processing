@@ -39,11 +39,26 @@ Java + PySpark, e baixa a imagem oficial do Spark). Acompanhe com
 - Spark Master UI: http://localhost:8080
 - Airflow UI: http://localhost:8081 (usuário `admin`, senha `admin`)
 
-Na UI do Airflow, ative a DAG `shopbrasil_pipeline_vendas` (toggle à esquerda)
-e dispare uma execução manual (botão de play) escolhendo a data
-`2023-12-08` — é o dia com dados problemáticos, então dá pra ver o quality
-gate e a quarentena funcionando de verdade. Os outros dias (01 a 07/12) têm
-dados limpos.
+Antes de ativar a DAG, rode o script que prepara os dados do dia:
+
+```bash
+./scripts/preparar_demo.sh
+```
+
+O botão padrão de "Trigger DAG" na UI do Airflow sempre usa a data de hoje —
+esse script copia o dia com dado problemático (2023-12-08) pra uma pasta com
+a data atual, então o clique padrão já acha arquivo de verdade e mostra o
+quality gate e a quarentena funcionando, sem precisar digitar nenhum comando
+na hora. Depois é só ativar a DAG `shopbrasil_pipeline_vendas` (toggle à
+esquerda) e clicar no play.
+
+Se quiser rodar uma das datas originais (2023-12-01 a 2023-12-08) em vez da
+data de hoje, use o comando abaixo (a UI não deixa escolher a data no
+disparo padrão):
+
+```bash
+docker exec shopbrasil-airflow-scheduler airflow dags trigger shopbrasil_pipeline_vendas --exec-date 2023-12-08T06:00:00+00:00
+```
 
 Resultado final em `data/datalake/gold/`.
 
@@ -96,7 +111,8 @@ descartado.
 ├── quality/checks.py      # DataQualityFramework
 ├── scripts/
 │   ├── airflow_init.sh
-│   └── rodar_pipeline_local.sh   # plano B
+│   ├── rodar_pipeline_local.sh   # plano B
+│   └── preparar_demo.sh          # copia o dia sujo pra data de hoje, antes da demo
 ├── data/raw/               # dados de entrada (incoming + dimensões)
 └── docs/arquitetura.md
 ```
@@ -107,6 +123,7 @@ descartado.
 |---|---|---|
 | `docker compose up` falha com "port is already allocated" | Porta 7077, 8080 ou 8081 já está em uso por outro programa | Feche o que estiver usando a porta, ou pare outros containers com `docker ps` + `docker stop <id>` |
 | `SparkSubmitOperator` falha com "spark-submit: command not found" | Imagem do Airflow não foi rebuildada | `docker compose build airflow-init airflow-webserver airflow-scheduler` |
+| Clicou em "Trigger DAG" (botão padrão) e todas as tasks ficaram `skipped` | O botão padrão usa a data de hoje, e não existe pasta `incoming/<hoje>` com dado | Rode `./scripts/preparar_demo.sh` antes de disparar, ou use o comando com `--exec-date` pra uma data de 2023-12 |
 | DAG não aparece na UI | Scheduler ainda não fez o parse, ou erro de import | `docker compose logs airflow-scheduler` / `docker exec shopbrasil-airflow-scheduler airflow dags list-import-errors` |
 | `FileNotFoundError` no job Bronze | Data errada ou pasta `incoming/<data>` não existe | Confira `data/raw/incoming/` — só existe de 2023-12-01 a 2023-12-08 |
 | Quality gate falha sempre | Relatório da Silver não foi gerado | Rode a Silver antes (`silver_transformacao` precisa ter sucesso antes do `quality_gate`) |
